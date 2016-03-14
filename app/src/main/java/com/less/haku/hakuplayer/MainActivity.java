@@ -77,10 +77,10 @@ public class MainActivity extends AppCompatActivity {
             String str = response.body().string();
             Log.d("tttttt", str);
 
-            String result = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]"));
+            String result = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]") - 1);
             Log.d("tttttt", result);
-            playVideo("http://live-play-3.acgvideo.com/live/live_11153765_9369560.flv");
-//            playVideo(result);
+//            playVideo("http://live-play-3.acgvideo.com/live/live_11153765_9369560.flv");
+            playVideo(result);
         }
     }
 
