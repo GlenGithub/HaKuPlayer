@@ -1,21 +1,39 @@
 package com.less.haku.hakuplayer;
 
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import master.flame.danmaku.controller.IDanmakuView;
+import master.flame.danmaku.danmaku.loader.ILoader;
+import master.flame.danmaku.danmaku.loader.IllegalDataException;
+import master.flame.danmaku.danmaku.loader.android.DanmakuLoaderFactory;
+import master.flame.danmaku.danmaku.model.BaseDanmaku;
+import master.flame.danmaku.danmaku.model.DanmakuTimer;
+import master.flame.danmaku.danmaku.model.IDanmakus;
+import master.flame.danmaku.danmaku.model.android.DanmakuContext;
+import master.flame.danmaku.danmaku.model.android.Danmakus;
+import master.flame.danmaku.danmaku.parser.BaseDanmakuParser;
+import master.flame.danmaku.danmaku.parser.IDataSource;
+import master.flame.danmaku.danmaku.parser.android.BiliDanmukuParser;
+import master.flame.danmaku.ui.widget.DanmakuView;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 
@@ -27,10 +45,19 @@ public class MainActivity extends AppCompatActivity {
     EditText playCid;
     @Bind(R.id.play_getUrl)
     TextView play;
+    @Bind(R.id.danmaku_text)
+    EditText danmuText;
+    @Bind(R.id.danmaku_send)
+    Button danmuSend;
+    @Bind(R.id.danmaku_view)
+    DanmakuView danmakuView;
 
     private IjkMediaPlayer ijkMediaPlayer;
     private SurfaceHolder holder;
     private OkHttpClient client;
+
+    private DanmakuContext context;
+    private BaseDanmakuParser mParser;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,28 +69,53 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void init() {
+        context = DanmakuContext.create();
+
         client = new OkHttpClient();
         holder = videoView.getHolder();
         ijkMediaPlayer = new IjkMediaPlayer();
         ijkMediaPlayer.setKeepInBackground(false);
 
-        testfunc();
-    }
 
-    /**
-     * 测试功能
-     * */
-    private void testfunc() {
-        play.setText("111111111111111111111111111111111111111111111111");
-        Log.d("tttttt", play.getLineCount() + "");
-        Toast.makeText(this, play.getHeight() + "", Toast.LENGTH_SHORT).show();
-        play.post(new Runnable() {
+        if (danmakuView != null) {
+            mParser = createParser(null);
+//            mParser = createParser(this.getResources().openRawResource(R.raw.comments));
+            danmakuView.setCallback(new master.flame.danmaku.controller.DrawHandler.Callback() {
+                @Override
+                public void updateTimer(DanmakuTimer timer) {
+                }
 
-            @Override
-            public void run() {
-                Log.d("tttttt after", play.getHeight() + "");
-            }
-        });
+                @Override
+                public void drawingFinished() {
+
+                }
+
+                @Override
+                public void danmakuShown(BaseDanmaku danmaku) {
+//                    Log.d("DFM", "danmakuShown(): text=" + danmaku.text);
+                }
+
+                @Override
+                public void prepared() {
+                    danmakuView.start();
+                }
+            });
+            danmakuView.setOnDanmakuClickListener(new IDanmakuView.OnDanmakuClickListener() {
+                @Override
+                public void onDanmakuClick(BaseDanmaku latest) {
+                    Log.d("DFM", "onDanmakuClick text:" + latest.text);
+                }
+
+                @Override
+                public void onDanmakuClick(IDanmakus danmakus) {
+                    Log.d("DFM", "onDanmakuClick danmakus size:" + danmakus.size());
+                }
+            });
+
+            danmakuView.prepare(mParser, context);
+            danmakuView.showFPS(true);
+            danmakuView.enableDanmakuDrawingCache(true);
+        }
     }
 
     @OnClick(R.id.play_getUrl)
@@ -80,27 +132,43 @@ public class MainActivity extends AppCompatActivity {
         }).start();
     }
 
+    /**
+     *
+     * */
+
     public void execute() throws Exception {
 //        ijkMediaPlayer.stop();
-//
-//        String cid = playCid.getText().toString();
+
+        //cid 3885454
+        String cid = playCid.getText().toString();
+        //直播URL拼接
 //        String url = "http://live.bilibili.com/api/playurl?player=1&quality=0&cid=" + cid;
-//        Request request = new Request.Builder()
-//                .url(url)
-//                .build();
-//        Response response = client.newCall(request).execute();
-//
-//        if (response.isSuccessful()) {
-//            String str = response.body().string();
-//            Log.d("response", str);
-//            String result = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]") - 1);
-//            playVideo(result);
-//        }
+
+
+        //点播URL拼接
+        String appkey = "f3bb208b3d081dc8";
+        String secretkey = "ea85624dfcf12d7cc7b2b3a94fac1f2c";
+        String sign_this = string2MD5("appkey=" + appkey + "&cid=" + cid + secretkey);
+        String url = "http://interface.bilibili.com/playurl?appkey=" + appkey + "&cid=" + cid + "&sign=" + sign_this;
+        Log.d("video request", url);
+
+        Request request = new Request.Builder()
+                .url(url)
+                .build();
+
+        Response response = client.newCall(request).execute();
+
+        if (response.isSuccessful()) {
+            String str = response.body().string();
+            Log.d("response", str);
+            String result = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]") - 1);
+            playVideo(result);
+        }
 
 //        String uri = "http://cn-zjcz5-dx.acgvideo.com/vg5/7/45/6526400-1.flv?expires=1458226500&ssig=-UYWQOZeJeOApl50MzqOiw&oi=1961670062&appkey=85eb6835b0a1034e&or=3026306825&rate=0";
 //        String uri = "http://cn-jsyz6-dx.acgvideo.com/vg0/f/e7/4772447-1.flv?expires=1444760400&ssig=JJcOW4VVGBKaMfbJTBbjBA&oi=12345678&player=1&rate=0";
-        String uri = "http://cn-shcy2-dx.acgvideo.com/vg2/3/c8/6630302hd.mp4?expires=1458227100&ssig=Hnbd8nGJM7HtQeL0HYGJng&oi=1961670062&internal=1&or=3026306826&rate=0";
-        playVideo(uri);
+//        String uri = "http://cn-zjhz5-dx.acgvideo.com/vg11/0/28/3885454-1.flv?expires=1458631800&ssig=cVAFm_SGopybz1k0RsxCmA&oi=1961670062&appkey=f3bb208b3d081dc8&or=3026306826&rate=0";
+//        playVideo(uri);
     }
 
     private void playVideo(String uri) {
@@ -149,5 +217,91 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         ijkMediaPlayer.release();
+    }
+
+    /***
+     * MD5加码 生成32位md5码
+     */
+    public static String string2MD5(String inStr) {
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (Exception e) {
+            System.out.println(e.toString());
+            e.printStackTrace();
+            return "";
+        }
+        char[] charArray = inStr.toCharArray();
+        byte[] byteArray = new byte[charArray.length];
+
+        for (int i = 0; i < charArray.length; i++)
+            byteArray[i] = (byte) charArray[i];
+        byte[] md5Bytes = md5.digest(byteArray);
+        StringBuffer hexValue = new StringBuffer();
+        for (int i = 0; i < md5Bytes.length; i++) {
+            int val = ((int) md5Bytes[i]) & 0xff;
+            if (val < 16)
+                hexValue.append("0");
+            hexValue.append(Integer.toHexString(val));
+        }
+        return hexValue.toString();
+
+    }
+
+    /**
+     * ******************  弹幕相关内容  ******************
+     * */
+
+    /**
+     * 增加弹幕
+     */
+    @OnClick(R.id.danmaku_send)
+    void addDanmaku() {
+        BaseDanmaku danmaku = context.mDanmakuFactory.createDanmaku(BaseDanmaku.TYPE_SCROLL_RL, context);
+//        BaseDanmaku danmaku = context.mDanmakuFactory.createDanmaku(BaseDanmaku.TYPE_SCROLL_RL);
+        if (danmaku == null || danmakuView == null) {
+            return;
+        }
+        // for(int i=0;i<100;i++){
+        // }
+        danmaku.text = "这是一条弹幕" + System.nanoTime();
+        danmaku.padding = 5;
+        danmaku.priority = 0;  // 可能会被各种过滤器过滤并隐藏显示
+        danmaku.isLive = false;
+        danmaku.time = danmakuView.getCurrentTime() + 1200;
+        danmaku.textSize = 25f;
+//        danmaku.textSize = 25f * (mParser.getDisplayer().getDensity() - 0.6f);
+        danmaku.textColor = Color.RED;
+        danmaku.textShadowColor = Color.WHITE;
+        // danmaku.underlineColor = Color.GREEN;
+        danmaku.borderColor = Color.GREEN;
+        danmakuView.addDanmaku(danmaku);
+
+    }
+
+    private BaseDanmakuParser createParser(InputStream stream) {
+
+        if (stream == null) {
+            return new BaseDanmakuParser() {
+
+                @Override
+                protected Danmakus parse() {
+                    return new Danmakus();
+                }
+            };
+        }
+
+        ILoader loader = DanmakuLoaderFactory.create(DanmakuLoaderFactory.TAG_BILI);
+
+        try {
+            loader.load(stream);
+        } catch (IllegalDataException e) {
+            e.printStackTrace();
+        }
+        BaseDanmakuParser parser = new BiliDanmukuParser();
+        IDataSource<?> dataSource = loader.getDataSource();
+        parser.load(dataSource);
+        return parser;
+
     }
 }

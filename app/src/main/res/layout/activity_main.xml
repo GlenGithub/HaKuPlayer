@@ -3,6 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+
+
     <EditText
         android:id="@+id/play_cid"
         android:layout_width="match_parent"
@@ -16,6 +18,7 @@
         android:text="播放"
         android:textSize="40dp"
         android:gravity="center"/>
+
 
     <SurfaceView
         android:id="@+id/video_view"
@@ -49,4 +52,28 @@
             android:gravity="center"
             android:text="停止"/>
     </LinearLayout>
+    <LinearLayout
+        android:layout_alignParentBottom="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/danmaku_text"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/danmaku_send"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="发送"/>
+    </LinearLayout>
+
+    <master.flame.danmaku.ui.widget.DanmakuView
+        android:id="@+id/danmaku_view"
+        android:layout_marginTop="110dp"
+        android:layout_width="match_parent"
+        android:layout_height="300dp" />
 </RelativeLayout>
