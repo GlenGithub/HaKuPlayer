@@ -7,6 +7,8 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.IOException;
 
@@ -14,8 +16,6 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 
@@ -25,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
     SurfaceView videoView;
     @Bind(R.id.play_cid)
     EditText playCid;
+    @Bind(R.id.play_getUrl)
+    TextView play;
 
     private IjkMediaPlayer ijkMediaPlayer;
     private SurfaceHolder holder;
@@ -45,11 +47,23 @@ public class MainActivity extends AppCompatActivity {
         ijkMediaPlayer = new IjkMediaPlayer();
         ijkMediaPlayer.setKeepInBackground(false);
 
-//        String uri = "http://cn-shcy3-dx.acgvideo.com/vg12/f/9a/3215566hd.mp4?expires=1457420100&ssig=Xr96D4B9sG2ZD2W99rOHng&oi=1961670062&appkey=f3bb208b3d081dc8&or=3026306825&rate=0";
-//        String uri = "http://live-play.acgvideo.com/live/856/live_14837663_7724658.flv";
-//        String uri = "ijkhttphook://devimages.apple.com.edgekey.net/streaming/examples/bipbop_4x3/gear1/prog_index.m3u8";
-        String uri = "http://live-play.acgvideo.com/live/977/live_11153765_9369560.flv";
+        testfunc();
+    }
 
+    /**
+     * 测试功能
+     * */
+    private void testfunc() {
+        play.setText("111111111111111111111111111111111111111111111111");
+        Log.d("tttttt", play.getLineCount() + "");
+        Toast.makeText(this, play.getHeight() + "", Toast.LENGTH_SHORT).show();
+        play.post(new Runnable() {
+
+            @Override
+            public void run() {
+                Log.d("tttttt after", play.getHeight() + "");
+            }
+        });
     }
 
     @OnClick(R.id.play_getUrl)
@@ -67,21 +81,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void execute() throws Exception {
-        String cid = playCid.getText().toString();
-        String url = "http://live.bilibili.com/api/playurl?player=1&quality=0&cid=" + cid;
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-        Response response = client.newCall(request).execute();
-        if (response.isSuccessful()) {
-            String str = response.body().string();
-            Log.d("tttttt", str);
+//        ijkMediaPlayer.stop();
+//
+//        String cid = playCid.getText().toString();
+//        String url = "http://live.bilibili.com/api/playurl?player=1&quality=0&cid=" + cid;
+//        Request request = new Request.Builder()
+//                .url(url)
+//                .build();
+//        Response response = client.newCall(request).execute();
+//
+//        if (response.isSuccessful()) {
+//            String str = response.body().string();
+//            Log.d("response", str);
+//            String result = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]") - 1);
+//            playVideo(result);
+//        }
 
-            String result = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]") - 1);
-            Log.d("tttttt", result);
-//            playVideo("http://live-play-3.acgvideo.com/live/live_11153765_9369560.flv");
-            playVideo(result);
-        }
+//        String uri = "http://cn-zjcz5-dx.acgvideo.com/vg5/7/45/6526400-1.flv?expires=1458226500&ssig=-UYWQOZeJeOApl50MzqOiw&oi=1961670062&appkey=85eb6835b0a1034e&or=3026306825&rate=0";
+//        String uri = "http://cn-jsyz6-dx.acgvideo.com/vg0/f/e7/4772447-1.flv?expires=1444760400&ssig=JJcOW4VVGBKaMfbJTBbjBA&oi=12345678&player=1&rate=0";
+        String uri = "http://cn-shcy2-dx.acgvideo.com/vg2/3/c8/6630302hd.mp4?expires=1458227100&ssig=Hnbd8nGJM7HtQeL0HYGJng&oi=1961670062&internal=1&or=3026306826&rate=0";
+        playVideo(uri);
     }
 
     private void playVideo(String uri) {
