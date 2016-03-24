@@ -4,11 +4,10 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
-import android.text.Spanned;
-import android.text.style.BackgroundColorSpan;
 import android.text.style.ImageSpan;
 import android.util.Log;
 import android.view.SurfaceHolder;
@@ -16,6 +15,8 @@ import android.view.SurfaceView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import com.less.haku.hakuplayer.danmaku.CustomCacheStuffer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +37,6 @@ import master.flame.danmaku.danmaku.model.IDisplayer;
 import master.flame.danmaku.danmaku.model.android.BaseCacheStuffer;
 import master.flame.danmaku.danmaku.model.android.DanmakuContext;
 import master.flame.danmaku.danmaku.model.android.Danmakus;
-import master.flame.danmaku.danmaku.model.android.SpannedCacheStuffer;
 import master.flame.danmaku.danmaku.parser.BaseDanmakuParser;
 import master.flame.danmaku.danmaku.parser.IDataSource;
 import master.flame.danmaku.danmaku.parser.android.BiliDanmukuParser;
@@ -56,9 +56,9 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.play_getUrl)
     TextView play;
     @Bind(R.id.danmaku_text)
-    EditText danmuText;
+    EditText danmaText;
     @Bind(R.id.danmaku_send)
-    Button danmuSend;
+    Button danmaSend;
     @Bind(R.id.danmaku_view)
     DanmakuView danmakuView;
 
@@ -75,42 +75,42 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void prepareDrawing(final BaseDanmaku danmaku, boolean fromWorkerThread) {
-            if (danmaku.text instanceof Spanned) { // 根据你的条件检查是否需要需要更新弹幕
-                // FIXME 这里只是简单启个线程来加载远程url图片，请使用你自己的异步线程池，最好加上你的缓存池
-                new Thread() {
-
-                    @Override
-                    public void run() {
-//                        String url = "http://www.bilibili.com/favicon.ico";
-//                        InputStream inputStream = null;
-//                        Drawable drawable = mDrawable;
-//                        if(drawable == null) {
-//                            try {
-//                                URLConnection urlConnection = new URL(url).openConnection();
-//                                inputStream = urlConnection.getInputStream();
-//                                drawable = BitmapDrawable.createFromStream(inputStream, "bitmap");
-//                                mDrawable = drawable;
-//                            } catch (MalformedURLException e) {
-//                                e.printStackTrace();
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            } finally {
-//                                IOUtils.closeQuietly(inputStream);
+//            if (danmaku.text instanceof Spanned) { // 根据你的条件检查是否需要需要更新弹幕
+//                // FIXME 这里只是简单启个线程来加载远程url图片，请使用你自己的异步线程池，最好加上你的缓存池
+//                new Thread() {
+//
+//                    @Override
+//                    public void run() {
+////                        String url = "http://www.bilibili.com/favicon.ico";
+////                        InputStream inputStream = null;
+////                        Drawable drawable = mDrawable;
+////                        if(drawable == null) {
+////                            try {
+////                                URLConnection urlConnection = new URL(url).openConnection();
+////                                inputStream = urlConnection.getInputStream();
+////                                drawable = BitmapDrawable.createFromStream(inputStream, "bitmap");
+////                                mDrawable = drawable;
+////                            } catch (MalformedURLException e) {
+////                                e.printStackTrace();
+////                            } catch (IOException e) {
+////                                e.printStackTrace();
+////                            } finally {
+////                                IOUtils.closeQuietly(inputStream);
+////                            }
+////                        }
+//                        Drawable drawable = getResources().getDrawable(R.drawable.ic_launcher);
+//                        if (drawable != null) {
+//                            drawable.setBounds(0, 0, 100, 100);
+//                            SpannableStringBuilder spannable = createSpannable(drawable);
+//                            danmaku.text = spannable;
+//                            if(danmakuView != null) {
+//                                danmakuView.invalidateDanmaku(danmaku, false);
 //                            }
+//                            return;
 //                        }
-                        Drawable drawable = getResources().getDrawable(R.drawable.ic_launcher);
-                        if (drawable != null) {
-                            drawable.setBounds(0, 0, 100, 100);
-                            SpannableStringBuilder spannable = createSpannable(drawable);
-                            danmaku.text = spannable;
-                            if(danmakuView != null) {
-                                danmakuView.invalidateDanmaku(danmaku, false);
-                            }
-                            return;
-                        }
-                    }
-                }.start();
-            }
+//                    }
+//                }.start();
+//            }
         }
 
         @Override
@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity {
     private void init() {
         // 设置最大显示行数
         HashMap<Integer, Integer> maxLinesPair = new HashMap<Integer, Integer>();
-        maxLinesPair.put(BaseDanmaku.TYPE_SCROLL_RL, 5); // 滚动弹幕最大显示3行
+        maxLinesPair.put(BaseDanmaku.TYPE_SCROLL_RL, 3); // 滚动弹幕最大显示3行
 
         // 设置是否禁止重叠
         HashMap<Integer, Boolean> overlappingEnablePair = new HashMap<Integer, Boolean>();
@@ -150,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
                 .setDuplicateMergingEnabled(false)
                 .setScrollSpeedFactor(1.2f)
                 .setScaleTextSize(1.2f)
-                .setCacheStuffer(new SpannedCacheStuffer(), mCacheStufferAdapter) // 图文混排使用SpannedCacheStuffer
+                .setCacheStuffer(new CustomCacheStuffer(), mCacheStufferAdapter) // 图文混排使用SpannedCacheStuffer
 //        .setCacheStuffer(new BackgroundCacheStuffer())  // 绘制背景使用BackgroundCacheStuffer
                 .setMaximumLines(maxLinesPair)
                 .preventOverlapping(overlappingEnablePair);
@@ -239,17 +239,20 @@ public class MainActivity extends AppCompatActivity {
         if (response.isSuccessful()) {
             String str = response.body().string();
             Log.d("response", str);
-            String result = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]") - 1);
-            playVideo(result);
+//            String result = str.substring(str.lastIndexOf("[") + 1, str.lastIndexOf("]") - 1);
+//            playVideo(result);
         }
 
 //        String uri = "http://cn-zjcz5-dx.acgvideo.com/vg5/7/45/6526400-1.flv?expires=1458226500&ssig=-UYWQOZeJeOApl50MzqOiw&oi=1961670062&appkey=85eb6835b0a1034e&or=3026306825&rate=0";
 //        String uri = "http://cn-jsyz6-dx.acgvideo.com/vg0/f/e7/4772447-1.flv?expires=1444760400&ssig=JJcOW4VVGBKaMfbJTBbjBA&oi=12345678&player=1&rate=0";
 //        String uri = "http://cn-zjhz5-dx.acgvideo.com/vg11/0/28/3885454-1.flv?expires=1458631800&ssig=cVAFm_SGopybz1k0RsxCmA&oi=1961670062&appkey=f3bb208b3d081dc8&or=3026306826&rate=0";
 //        playVideo(uri);
+        String uri = Environment.getExternalStorageDirectory().getPath() + "/我们的毕业季.mp4";
+        playVideo(uri);
     }
 
     private void playVideo(String uri) {
+        Log.d("uri", uri);
         try {
             ijkMediaPlayer.setDataSource(this, Uri.parse(uri));
             ijkMediaPlayer.setDisplay(holder);
@@ -359,17 +362,19 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.danmaku_send)
     void addMulti() {
-        for (int i = 0; i < 5; i++)  {
-            addDanmaKuShowTextAndImage();
-        }
+        addDanmaKuShowTextAndImage();
+//        for (int i = 0; i < 5; i++)  {
+//            addDanmaKuShowTextAndImage();
+//        }
     }
 
     void addDanmaKuShowTextAndImage() {
         BaseDanmaku danmaku = context.mDanmakuFactory.createDanmaku(BaseDanmaku.TYPE_SCROLL_RL, context);
         Drawable drawable = getResources().getDrawable(R.drawable.ic_launcher);
         drawable.setBounds(0, 0, 100, 100);
-        SpannableStringBuilder spannable = createSpannable(drawable);
-        danmaku.text = spannable;
+//        SpannableStringBuilder spannable = createSpannable(drawable);
+
+        danmaku.text = danmaText.getText();
         danmaku.padding = 5;
         danmaku.priority = 1;  // 一定会显示, 一般用于本机发送的弹幕
         danmaku.isLive = false;
@@ -377,7 +382,7 @@ public class MainActivity extends AppCompatActivity {
         danmaku.textSize = 25f * (mParser.getDisplayer().getDensity() - 0.6f);
         danmaku.textColor = Color.RED;
         danmaku.textShadowColor = 0; // 重要：如果有图文混排，最好不要设置描边(设textShadowColor=0)，否则会进行两次复杂的绘制导致运行效率降低
-        danmaku.underlineColor = Color.GREEN;
+//        danmaku.underlineColor = Color.GREEN;
         danmakuView.addDanmaku(danmaku);
 
 //        danmuText.setText(spannable);
@@ -387,12 +392,12 @@ public class MainActivity extends AppCompatActivity {
         String text = "bitmap";
         SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder(text);
         ImageSpan span = new ImageSpan(drawable);//ImageSpan.ALIGN_BOTTOM);
-        spannableStringBuilder.setSpan(span, 0, 1, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
-        spannableStringBuilder.append("图文混排111" + System.nanoTime());
+        spannableStringBuilder.setSpan(span, 2, 3, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
+        spannableStringBuilder.append("图文混排111   " + System.nanoTime());
 
 //        spannableStringBuilder.setSpan(span, 2, 3, Spannable.SPAN_INCLUSIVE_EXCLUSIVE);
 //        spannableStringBuilder.append(spannableStringBuilder);
-        spannableStringBuilder.setSpan(new BackgroundColorSpan(Color.parseColor("#8A2233B1")), 0, spannableStringBuilder.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+//        spannableStringBuilder.setSpan(new BackgroundColorSpan(Color.parseColor("#8A2233B1")), 0, spannableStringBuilder.length(), Spannable.SPAN_INCLUSIVE_INCLUSIVE);
         return spannableStringBuilder;
     }
 
