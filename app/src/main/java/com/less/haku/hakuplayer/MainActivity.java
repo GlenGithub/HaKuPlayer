@@ -18,6 +18,7 @@ import android.widget.TextView;
 
 import com.less.haku.hakuplayer.danmaku.CustomCacheStuffer;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -129,6 +130,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void init() {
+        playCid.setText("3885454");
+
         // 设置最大显示行数
         HashMap<Integer, Integer> maxLinesPair = new HashMap<Integer, Integer>();
         maxLinesPair.put(BaseDanmaku.TYPE_SCROLL_RL, 3); // 滚动弹幕最大显示3行
@@ -137,7 +140,6 @@ public class MainActivity extends AppCompatActivity {
         HashMap<Integer, Boolean> overlappingEnablePair = new HashMap<Integer, Boolean>();
         overlappingEnablePair.put(BaseDanmaku.TYPE_SCROLL_RL, false);
         overlappingEnablePair.put(BaseDanmaku.TYPE_FIX_TOP, false);
-
 
         context = DanmakuContext.create();
 
@@ -155,9 +157,14 @@ public class MainActivity extends AppCompatActivity {
                 .setMaximumLines(maxLinesPair)
                 .preventOverlapping(overlappingEnablePair);
 
+
+    }
+
+    private void setDanmaKu(InputStream inputStream) {
         if (danmakuView != null) {
-            mParser = createParser(null);
+//            mParser = createParser(null);
 //            mParser = createParser(this.getResources().openRawResource(R.raw.comments));
+            mParser = createParser(inputStream);
             danmakuView.setCallback(new master.flame.danmaku.controller.DrawHandler.Callback() {
                 @Override
                 public void updateTimer(DanmakuTimer timer) {
@@ -248,6 +255,40 @@ public class MainActivity extends AppCompatActivity {
 //        String uri = "http://cn-zjhz5-dx.acgvideo.com/vg11/0/28/3885454-1.flv?expires=1458631800&ssig=cVAFm_SGopybz1k0RsxCmA&oi=1961670062&appkey=f3bb208b3d081dc8&or=3026306826&rate=0";
 //        playVideo(uri);
         String uri = Environment.getExternalStorageDirectory().getPath() + "/我们的毕业季.mp4";
+
+//        String commentUri = "http://comment.bilibili.com/" + cid + ".xml";
+        String commentUri = "http://comment.bilibili.com/3885454.xml";
+//        commentUri = "https://publicobject.com/helloworld.txt";
+
+        Log.d("request_comment url", commentUri);
+        Request requestComment = new Request.Builder()
+//                .addHeader("Accept-Encoding", "deflate")
+                .addHeader("Accept", "application/json, text/javascript, */*; q=0.01")
+//                .addHeader("Accept-Encoding", "gzip").
+                .addHeader("Accept-Language", "en-US,en;q=0.8,fa;q=0.6,ar;q=0.4")
+                .url(commentUri)
+                .build();
+
+
+        Response responseComment = client.newCall(requestComment).execute();
+
+        if (responseComment.isSuccessful()) {
+//            InputStream inputStream = responseComment.body()();
+//            String inputString = responseComment.body().string();
+//            ResponseBody body = responseComment.body();
+//            byte[] bytes = responseComment.body().bytes();
+//            String string = body.string();
+//            Reader reader = body.charStream();
+            byte[] result = ZipUtil.decompress(responseComment.body().bytes());
+
+            Log.d("response_comment", new String(result));
+            InputStream inputStream =  new ByteArrayInputStream(result);
+
+            setDanmaKu(inputStream);
+//            setDanmaKu(this.getResources().openRawResource(R.raw.comments));
+//            mParser = createParser(this.getResources().openRawResource(R.raw.comments));
+        }
+
         playVideo(uri);
     }
 
@@ -426,5 +467,4 @@ public class MainActivity extends AppCompatActivity {
         return parser;
 
     }
-
 }
