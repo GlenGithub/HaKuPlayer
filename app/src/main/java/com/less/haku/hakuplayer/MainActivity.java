@@ -9,20 +9,24 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ImageSpan;
+import android.util.Base64;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.less.haku.hakuplayer.danmaku.CustomCacheStuffer;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.HashMap;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -205,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.play_getUrl)
     void getUrl() {
+        Toast.makeText(MainActivity.this, "11221", Toast.LENGTH_SHORT).show();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -223,7 +228,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void execute() throws Exception {
 //        ijkMediaPlayer.stop();
-
         //cid 3885454
         String cid = playCid.getText().toString();
         //直播URL拼接
@@ -257,15 +261,12 @@ public class MainActivity extends AppCompatActivity {
         String uri = Environment.getExternalStorageDirectory().getPath() + "/我们的毕业季.mp4";
 
 //        String commentUri = "http://comment.bilibili.com/" + cid + ".xml";
-        String commentUri = "http://comment.bilibili.com/3885454.xml";
+        String commentUri = "http://comment.bilibili.com/4.xml";
 //        commentUri = "https://publicobject.com/helloworld.txt";
 
         Log.d("request_comment url", commentUri);
+
         Request requestComment = new Request.Builder()
-//                .addHeader("Accept-Encoding", "deflate")
-                .addHeader("Accept", "application/json, text/javascript, */*; q=0.01")
-//                .addHeader("Accept-Encoding", "gzip").
-                .addHeader("Accept-Language", "en-US,en;q=0.8,fa;q=0.6,ar;q=0.4")
                 .url(commentUri)
                 .build();
 
@@ -273,23 +274,42 @@ public class MainActivity extends AppCompatActivity {
         Response responseComment = client.newCall(requestComment).execute();
 
         if (responseComment.isSuccessful()) {
-//            InputStream inputStream = responseComment.body()();
-//            String inputString = responseComment.body().string();
-//            ResponseBody body = responseComment.body();
-//            byte[] bytes = responseComment.body().bytes();
-//            String string = body.string();
-//            Reader reader = body.charStream();
-            byte[] result = ZipUtil.decompress(responseComment.body().bytes());
+//            byte[] result = responseComment.body().bytes();
+//            String res = Base64.encodeToString(result, Base64.DEFAULT);
+//            deflateString(res);
 
-            Log.d("response_comment", new String(result));
-            InputStream inputStream =  new ByteArrayInputStream(result);
-
-            setDanmaKu(inputStream);
-//            setDanmaKu(this.getResources().openRawResource(R.raw.comments));
+//            setDanmaKu(new ByteArrayInputStream(compressedBytes));
+            setDanmaKu(this.getResources().openRawResource(R.raw.comments));
 //            mParser = createParser(this.getResources().openRawResource(R.raw.comments));
         }
 
         playVideo(uri);
+    }
+
+    private String deflateString(String str) {
+        try {
+            byte[] output2 = Base64.decode(str, Base64.DEFAULT);
+
+            // Decompress the bytes
+            Inflater decompresser = new Inflater();
+            decompresser.setInput(output2);
+            byte[] result = str.getBytes();
+            int resultLength = decompresser.inflate(result);
+            decompresser.end();
+
+            // Decode the bytes into a String
+            String outputString = new String(result, 0, resultLength, "UTF-8");
+            Log.d("Deflated", "Deflated String:" + outputString);
+            return outputString;
+
+        } catch (UnsupportedEncodingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (DataFormatException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return "";
     }
 
     private void playVideo(String uri) {
