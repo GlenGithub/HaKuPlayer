@@ -9,24 +9,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ImageSpan;
-import android.util.Base64;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.less.haku.hakuplayer.danmaku.CustomCacheStuffer;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.util.HashMap;
-import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -166,7 +163,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void setDanmaKu(InputStream inputStream) {
         if (danmakuView != null) {
-//            mParser = createParser(null);
 //            mParser = createParser(this.getResources().openRawResource(R.raw.comments));
             mParser = createParser(inputStream);
             danmakuView.setCallback(new master.flame.danmaku.controller.DrawHandler.Callback() {
@@ -209,7 +205,6 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.play_getUrl)
     void getUrl() {
-        Toast.makeText(MainActivity.this, "11221", Toast.LENGTH_SHORT).show();
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -260,12 +255,10 @@ public class MainActivity extends AppCompatActivity {
 //        playVideo(uri);
         String uri = Environment.getExternalStorageDirectory().getPath() + "/我们的毕业季.mp4";
 
-//        String commentUri = "http://comment.bilibili.com/" + cid + ".xml";
-        String commentUri = "http://comment.bilibili.com/4.xml";
-//        commentUri = "https://publicobject.com/helloworld.txt";
+        String commentUri = "http://comment.bilibili.com/" + cid + ".xml";
+//        String commentUri = "http://comment.bilibili.com/4.xml";
 
         Log.d("request_comment url", commentUri);
-
         Request requestComment = new Request.Builder()
                 .url(commentUri)
                 .build();
@@ -274,42 +267,12 @@ public class MainActivity extends AppCompatActivity {
         Response responseComment = client.newCall(requestComment).execute();
 
         if (responseComment.isSuccessful()) {
-//            byte[] result = responseComment.body().bytes();
-//            String res = Base64.encodeToString(result, Base64.DEFAULT);
-//            deflateString(res);
-
-//            setDanmaKu(new ByteArrayInputStream(compressedBytes));
-            setDanmaKu(this.getResources().openRawResource(R.raw.comments));
-//            mParser = createParser(this.getResources().openRawResource(R.raw.comments));
+            InflaterInputStream inputStream = new InflaterInputStream(
+                    responseComment.body().byteStream(), new Inflater(true));
+            setDanmaKu(inputStream);
         }
 
         playVideo(uri);
-    }
-
-    private String deflateString(String str) {
-        try {
-            byte[] output2 = Base64.decode(str, Base64.DEFAULT);
-
-            // Decompress the bytes
-            Inflater decompresser = new Inflater();
-            decompresser.setInput(output2);
-            byte[] result = str.getBytes();
-            int resultLength = decompresser.inflate(result);
-            decompresser.end();
-
-            // Decode the bytes into a String
-            String outputString = new String(result, 0, resultLength, "UTF-8");
-            Log.d("Deflated", "Deflated String:" + outputString);
-            return outputString;
-
-        } catch (UnsupportedEncodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (DataFormatException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return "";
     }
 
     private void playVideo(String uri) {
